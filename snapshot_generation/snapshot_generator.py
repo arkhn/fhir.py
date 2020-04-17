@@ -14,22 +14,28 @@ with open("/Users/jason/Desktop/choice-elements.json", "r") as fp:
     all_choice_elements = json.load(fp)
 
 
-class DiffConverter:
+class SnapshotGenerator:
     def __init__(self):
         self.slices = {}
         self.choice_type_elements = {}
-        self.result = None
+        self.snapshot_elements = None
 
     def reset(self):
         self.slices = {}
         self.choice_type_elements = {}
-        self.result = None
+        self.snapshot_elements = None
 
-    def convert_to_snapshot(self, diff, base_snapshot):
+    def augment_with_snapshot(self, profile):
         self.reset()
-        self.result = copy.deepcopy(base_snapshot)
-        for diff_el in diff["element"]:
-            el_present = apply_diff_element_on_list(self.result["element"], diff_el)
+
+        profile_diff = profile["differential"]
+        base_definition = fetch_structure_definition(url=profile["baseDefinition"])
+        base_snapshot = base_definition["items"][0]["snapshot"]["element"]
+
+        self.snapshot_elements = copy.deepcopy(base_snapshot)
+
+        for diff_el in profile_diff["element"]:
+            el_present = apply_diff_element_on_list(self.snapshot_elements, diff_el)
             if not el_present:
                 # TODO better check to be sure it's an extension
                 if "sliceName" in diff_el and diff_el["path"].split(".")[-1] == "extension":
@@ -59,16 +65,18 @@ class DiffConverter:
                     expanded = self.expand_element(id_to_expand)
                     if not expanded:
                         raise GenerationError(f"Could not expand an element with id {id_to_expand}")
-                    el_present = apply_diff_element_on_list(self.result["element"], diff_el)
+                    el_present = apply_diff_element_on_list(self.snapshot_elements, diff_el)
                     if not el_present:
                         raise GenerationError(f"Could not apply differential element: {diff_el}")
 
         self.augment_with_slices()
         self.augment_with_choice_elements()
-        return self.result
+
+        profile["snapshot"] = {"element": self.snapshot_elements}
+        return profile
 
     def create_new_slice(self, diff_el):
-        base_el, _ = self.find_element_by_id(self.result["element"], diff_el["id"].split(":")[0])
+        base_el, _ = self.find_element_by_id(self.snapshot_elements, diff_el["id"].split(":")[0])
 
         # Find type for slice
         if "type" in diff_el and len(diff_el["type"]) == 1:
@@ -89,7 +97,7 @@ class DiffConverter:
         self.slices[root_id].add_diff_element(diff_el)
 
     def create_new_choice_element(self, diff_element, choice_root, choice_type):
-        base_el, _ = self.find_element_by_id(self.result["element"], choice_root)
+        base_el, _ = self.find_element_by_id(self.snapshot_elements, choice_root)
 
         self.choice_type_elements[diff_element["id"]] = ChoiceTypeElement(
             snapshot_root=base_el,
@@ -121,7 +129,7 @@ class DiffConverter:
             # NOTE no need for checks, override everything
             extension_root[key_diff] = val_diff
         extension_element, insert_ind = self.find_element_by_id(
-            self.result["element"], extension_root["path"]
+            self.snapshot_elements, extension_root["path"]
         )
         if "slicing" not in extension_element:
             # Add default slicing
@@ -131,29 +139,29 @@ class DiffConverter:
                 "rules": "open",
             }
         # TODO function for that?
-        self.result["element"].insert(insert_ind + 1, extension_root)
+        self.snapshot_elements.insert(insert_ind + 1, extension_root)
 
     def augment_with_slices(self):
         for id_, slice_ in self.slices.items():
             # Find where to add
             _, insert_ind = self.find_element_by_id(
-                self.result["element"], slice_.root_id.split(":")[0]
+                self.snapshot_elements, slice_.root_id.split(":")[0]
             )
             insert_ind += 1
             for slice_element in slice_.definition_elements[::-1]:
-                self.result["element"].insert(insert_ind, slice_element)
+                self.snapshot_elements.insert(insert_ind, slice_element)
 
     def augment_with_choice_elements(self):
         for id_, element in self.choice_type_elements.items():
             element.normalize_ids_and_paths()
             # Find where to add
-            _, insert_ind = self.find_element_by_id(self.result["element"], element.choice_root)
+            _, insert_ind = self.find_element_by_id(self.snapshot_elements, element.choice_root)
             insert_ind += 1
             for el in element.definition_elements[::-1]:
-                self.result["element"].insert(insert_ind, el)
+                self.snapshot_elements.insert(insert_ind, el)
 
     def expand_element(self, element_id):
-        for ind, element in enumerate(self.result["element"]):
+        for ind, element in enumerate(self.snapshot_elements):
             if element["id"] == element_id:
                 if "type" not in element:
                     return False
@@ -169,7 +177,7 @@ class DiffConverter:
                     ind += 1
                     new_el["id"] = prepend_root(element["id"], new_el["id"])
                     new_el["path"] = prepend_root(element["path"], new_el["path"])
-                    self.result["element"].insert(ind, new_el)
+                    self.snapshot_elements.insert(ind, new_el)
                 return True
         return False
 
