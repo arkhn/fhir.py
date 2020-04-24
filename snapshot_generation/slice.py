@@ -7,6 +7,20 @@ from .helper import *
 
 
 class Slice(CompositeAttribute):
+    """
+    Abstraction to represent a group of fhir Elementdefinitions that are
+    part of a slice.
+    For instance, in a Structuredefinition having Elementdefinitions with ids
+        ...
+        Observation.code.coding
+        Observation.code.coding:BodyWeightCode
+        Observation.code.coding:BodyWeightCode.system
+        Observation.code.coding:BodyWeightCode.code
+        ...
+    a Slice will be built for the elements with ids starting with
+    Observation.code.coding:BodyWeightCode.
+    """
+
     def __init__(self, snapshot_root, diff_el, slice_type, base_id):
         diff_el = copy.deepcopy(diff_el)
         self.root_path = diff_el["path"]

@@ -114,8 +114,8 @@ def apply_diff_element(base_element, diff_element):
             func = key2func[key_diff]
             base_element[key_diff] = func(base_element.get(key_diff), val_diff)
         except KeyError as e:
-            print(key_diff, val_diff)
-            print(diff_element)
+            # We can have a field that looks like "fixedTypeOfValue" in the element
+            # to add constraints in a profile. We want to copy these into the snapshot.
             diff_type = diff_element["type"][0]["code"]
             if key_diff == f"fixed{uppercase_first_letter(diff_type)}":
                 base_element[key_diff] = val_diff

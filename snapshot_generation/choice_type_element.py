@@ -8,6 +8,23 @@ from .helper import *
 
 
 class ChoiceTypeElement(CompositeAttribute):
+    """
+    Abstraction to represent a group of fhir Elementdefinitions that are constraints
+    on a choice type.
+    For instance, in a Structuredefinition having Elementdefinitions with ids
+        ...
+        root.Observation.valueQuantity,
+        root.Observation.valueQuantity.id,
+        root.Observation.valueQuantity.{...},
+        root.Observation.valueCodeableConcept,
+        root.Observation.valueCodeableConcept.id,
+        root.Observation.valueCodeableConcept.{...},
+        ...
+    a ChoiceTypeElement will be built for the elements with ids starting
+    with root.Observation.valueQuantity and another one for elements with ids starting
+    with root.Observation.valueCodeableConcept.
+    """
+
     def __init__(self, snapshot_root, diff_element, choice_root, choice_type):
         diff_element = copy.deepcopy(diff_element)
         self.root_id = diff_element["id"]

@@ -21,18 +21,10 @@ def fetch_structure_definition(id_=None, url=None):
     if response.status_code != 200:
         raise Exception(f"Error while fetching structure definition: {response.text}.")
 
-    return response.json()
-
-
-def fetch_extension(url):
-    try:
-        response = requests.get(f"{API_URL}/StructureDefinition?url={url}")
-    except requests.exceptions.ConnectionError as e:
-        raise OperationOutcome(f"Could not connect to the fhir-api service: {e}")
-    if response.status_code != 200:
-        raise Exception(f"Error while fetching extension: {response.text}.")
-
-    return response.json()["items"][0]
+    if id_ is not None:
+        return response.json()
+    else:
+        return response.json()["entry"][0]["resource"]
 
 
 def get_root_element(structure_definition):
@@ -43,6 +35,15 @@ def get_root_element(structure_definition):
 
 
 def prepend_root(root, val):
+    """
+    Helper function to build slice element definition paths and ids.
+
+    Examples:
+        - prepend_root("Observation.category:VSCat", "CodeableConcept.id")
+        will return "Observation.category:VSCat.id"
+        - prepend_root("Observation.category:VSCat", "CodeableConcept")
+        will return "Observation.category:VSCat"
+    """
     split = val.split(".", 1)
     if len(split) == 1:
         # Root case

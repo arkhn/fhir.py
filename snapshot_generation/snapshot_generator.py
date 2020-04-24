@@ -30,9 +30,8 @@ class SnapshotGenerator:
 
         profile_diff = profile["differential"]
         base_definition = fetch_structure_definition(url=profile["baseDefinition"])
-        base_snapshot = base_definition["items"][0]["snapshot"]["element"]
 
-        self.snapshot_elements = copy.deepcopy(base_snapshot)
+        self.snapshot_elements = copy.deepcopy(base_definition["snapshot"]["element"])
 
         for diff_el in profile_diff["element"]:
             el_present = apply_diff_element_on_list(self.snapshot_elements, diff_el)
@@ -122,7 +121,7 @@ class SnapshotGenerator:
             profile_url = diff_el["type"][0]["profile"]
         except KeyError:
             raise GenerationError("Couldn't find profile url in diff element.")
-        extension_definition = fetch_extension(profile_url)
+        extension_definition = fetch_structure_definition(url=profile_url)
         extension_root = get_root_element(extension_definition)
         for key_diff, val_diff in diff_el.items():
             # Replace keys in diff element
