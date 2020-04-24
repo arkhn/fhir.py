@@ -1,7 +1,8 @@
 from abc import ABC
 
 from .apply_element import apply_diff_element_on_list
-from .helper import *
+from .errors import GenerationError
+from .helper import fetch_structure_definition, prepend_root
 
 
 class CompositeAttribute(ABC):

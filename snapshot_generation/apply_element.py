@@ -1,5 +1,5 @@
 from .errors import GenerationError
-from .helper import *
+from .helper import uppercase_first_letter
 
 
 def assert_same(base_val, diff_val):

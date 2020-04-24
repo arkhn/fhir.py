@@ -1,12 +1,15 @@
 import copy
 import json
-import re
-import requests
 
-from .apply_element import *
-from .helper import *
+from .apply_element import apply_diff_element_on_list
+from .helper import (
+    fetch_structure_definition,
+    get_root_element,
+    prepend_root,
+    uppercase_first_letter,
+)
 from .choice_type_element import ChoiceTypeElement
-from .errors import *
+from .errors import GenerationError
 from .slice import Slice
 
 

@@ -2,8 +2,7 @@ import copy
 
 from .apply_element import apply_diff_element_on_list
 from .composite_attribute import CompositeAttribute
-from .errors import GenerationError
-from .helper import *
+from .helper import fetch_structure_definition, prepend_root
 
 
 class Slice(CompositeAttribute):

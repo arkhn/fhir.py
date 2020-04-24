@@ -1,7 +1,6 @@
-import json
 import requests
 
-from .errors import *
+from .errors import GenerationError
 
 # TODO put that in an env variable or something like that
 API_URL = "https://pyrog.staging.arkhn.com/api"
@@ -17,7 +16,7 @@ def fetch_structure_definition(id_=None, url=None):
         else:
             response = requests.get(f"{API_URL}/StructureDefinition?url={url}")
     except requests.exceptions.ConnectionError as e:
-        raise OperationOutcome(f"Could not connect to the fhir-api service: {e}")
+        raise ConnectionError(f"Could not connect to the fhir-api service: {e}")
     if response.status_code != 200:
         raise Exception(f"Error while fetching structure definition: {response.text}.")
 
@@ -48,7 +47,7 @@ def prepend_root(root, val):
     if len(split) == 1:
         # Root case
         return root
-    return ".".join([root, split[1]])
+    return f"{root}.{split[1]}"
 
 
 def uppercase_first_letter(string):

@@ -3,8 +3,7 @@ import re
 
 from .apply_element import apply_diff_element_on_list
 from .composite_attribute import CompositeAttribute
-from .errors import GenerationError
-from .helper import *
+from .helper import fetch_structure_definition, prepend_root, uppercase_first_letter
 
 
 class ChoiceTypeElement(CompositeAttribute):
@@ -52,7 +51,7 @@ class ChoiceTypeElement(CompositeAttribute):
     def normalize_ids_and_paths(self):
         for element in self.definition_elements:
             element["id"] = self.build_multitype_id(self.choice_root, element["id"])
-            element["path"] = self.build_multitype_path(self.choice_root, element["path"])
+            element["path"] = prepend_root(self.choice_root, element["path"])
 
     @staticmethod
     def build_slice_name(root, type_):
@@ -63,12 +62,3 @@ class ChoiceTypeElement(CompositeAttribute):
     def build_multitype_id(root, val):
         multitype_attr = re.search(r"\.([a-zA-Z]+)\[x\]$", root).group(1)
         return f"{root}:{multitype_attr}{uppercase_first_letter(val)}"
-
-    @staticmethod
-    def build_multitype_path(root, val):
-        multitype_attr = re.search(r"\.([a-zA-Z]+)\[x\]$", root).group(1)
-        end = val.split(".", 1)
-        if len(end) == 1:
-            return root
-        else:
-            return f"{root}.{end[1]}"
