@@ -30,9 +30,10 @@ class ChoiceTypeElement(CompositeAttribute):
         self.root_id = diff_element["id"]
         self.choice_root = choice_root
         self.choice_type = choice_type
-        # TODO clean here
-        self.definition_elements = [get_root_element(fetch_structure_definition(id_=choice_type))]
-        self.replace_root_element(
+
+        self.root_base_elements = fetch_structure_definition(id_=choice_type)["snapshot"]["element"]
+        self.root_base_elements[0] = self.replace_element(
+            self.root_base_elements[0],
             snapshot_root,
             keys_to_remove=["extension", "slicing"],
             sliceName=self.build_slice_name(choice_root, choice_type),
@@ -40,17 +41,13 @@ class ChoiceTypeElement(CompositeAttribute):
         )
         diff_element["id"] = diff_element["id"].replace(self.root_id, self.choice_type)
         diff_element["path"] = diff_element["path"].replace(self.root_id, self.choice_type)
-        apply_diff_element_on_list(self.definition_elements, diff_element)
+        apply_diff_element_on_list(self.root_base_elements, diff_element)
+        self.definition_elements = [self.root_base_elements[0]]
 
     def add_diff_element(self, diff_element):
         diff_element["id"] = diff_element["id"].replace(self.root_id, self.choice_type)
         diff_element["path"] = diff_element["path"].replace(self.root_id, self.choice_type)
-        ok = apply_diff_element_on_list(self.definition_elements, diff_element)
-        if not ok:
-            self.expand_element(diff_element["id"].rsplit(".", 1)[0])
-            ok = apply_diff_element_on_list(self.definition_elements, diff_element)
-            if not ok:
-                raise GenerationError(f"Could not apply differential element: {diff_element}")
+        super().add_diff_element(diff_element)
 
     def normalize_ids_and_paths(self):
         for element in self.definition_elements:

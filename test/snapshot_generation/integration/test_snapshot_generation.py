@@ -77,7 +77,7 @@ def test_snapshot_generation():
                         if el_result[k] != v:
                             assert k in fields_to_skip, f"{profile['id']}, {k}, {v}"
                     else:
-                        assert k in can_be_absent_in_result
+                        assert k in can_be_absent_in_result, f"{profile['id']}, {k}, {v}"
                 for k, v in el_result.items():
                     if k not in el_ref:
                         assert k in can_be_absent_in_ref, f"{profile['id']}, {k}, {v}"

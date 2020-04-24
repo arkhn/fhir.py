@@ -1,38 +1,32 @@
 from abc import ABC
 
+from .apply_element import apply_diff_element_on_list
 from .helper import *
 
+
 class CompositeAttribute(ABC):
-    def replace_root_element(
-        self,
+    @staticmethod
+    def replace_element(
+        element,
         new_element,
         keys_to_skip=["id", "path", "name"],
         keys_to_remove=[],
         sliceName=None,
         new_type=None,
     ):
-        # Replace root type snapshot by root base snapshot
-        # NOTE not 100% sure why there are some keys to remove. More of an empirical
-        # rule than anything else.
-        for ind, el in enumerate(self.definition_elements):
-            if len(el["id"].split(".")) == 1:
-                for k, v in new_element.items():
-                    if k in keys_to_skip:
-                        continue
-                    self.definition_elements[ind][k] = v
-                self.definition_elements[ind] = {
-                    k: v
-                    for k, v in self.definition_elements[ind].items()
-                    if k not in keys_to_remove
-                }
+        for k, v in new_element.items():
+            if k in keys_to_skip:
+                continue
+            element[k] = v
+        element = {k: v for k, v in element.items() if k not in keys_to_remove}
 
-                if sliceName is not None:
-                    self.definition_elements[ind]["sliceName"] = sliceName
+        if sliceName is not None:
+            element["sliceName"] = sliceName
 
-                if new_type is not None:
-                    self.definition_elements[ind]["type"] = [{"code": new_type}]
+        if new_type is not None:
+            element["type"] = [{"code": new_type}]
 
-                break
+        return element
 
     def expand_element(self, element_id):
         for ind, element in enumerate(self.definition_elements):
@@ -51,3 +45,17 @@ class CompositeAttribute(ABC):
                     new_el["path"] = prepend_root(element["path"], new_el["path"])
                     self.definition_elements.insert(ind, new_el)
                 break
+
+    def add_diff_element(self, diff_element):
+        ok = apply_diff_element_on_list(self.definition_elements, diff_element)
+        if not ok:
+            if len(self.definition_elements) == 1:
+                # If we only have the root in self.definition_elements
+                # we get the other element that were cached
+                self.definition_elements = self.root_base_elements
+            else:
+                # Else, we need to expand another element
+                self.expand_element(diff_element["id"].rsplit(".", 1)[0])
+            ok = apply_diff_element_on_list(self.definition_elements, diff_element)
+            if not ok:
+                raise GenerationError(f"Could not apply differential element: {diff_element}")
