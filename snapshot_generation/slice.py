@@ -26,17 +26,22 @@ class Slice(CompositeAttribute):
         self.root_path = diff_el["path"]
         self.root_id = diff_el["id"]
         self.base_id = base_id
-        self.definition_elements = fetch_structure_definition(id_=slice_type)["snapshot"]["element"]
+        # TODO optimize here by storing non root elements to use them if needed
+        self.root_base_definition = fetch_structure_definition(id_=slice_type)
+        self.definition_elements = [get_root_element(self.root_base_definition)]
         self.replace_root_element(
             snapshot_root, keys_to_remove=["condition", "extension", "slicing"],
         )
         # We change ids and paths so that they are coherent with the ones from
         # the snapshot to build
+        self.replace_element_ids_and_paths()
+        # Apply the diff element
+        apply_diff_element_on_list(self.definition_elements, diff_el)
+
+    def replace_element_ids_and_paths(self):
         for element in self.definition_elements:
             element["id"] = prepend_root(self.root_id, element["id"])
             element["path"] = prepend_root(self.root_path, element["path"])
-        # Apply the diff element
-        apply_diff_element_on_list(self.definition_elements, diff_el)
 
     def add_diff_element(self, diff_element):
         ok = apply_diff_element_on_list(self.definition_elements, diff_element)

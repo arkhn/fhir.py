@@ -75,6 +75,8 @@ key2func = {
     "maxValue[x]": override_base,
     "maxLength": override_base,
     "mustSupport": override_base,
+    "isModifier": override_base,
+    "isModifierReason": override_base,
     "isSummary": override_base,
     "sliceName": override_base,
     "fixedUri": override_base,
@@ -116,8 +118,23 @@ def apply_diff_element(base_element, diff_element):
         except KeyError as e:
             # We can have a field that looks like "fixedTypeOfValue" in the element
             # to add constraints in a profile. We want to copy these into the snapshot.
-            diff_type = diff_element["type"][0]["code"]
-            if key_diff == f"fixed{uppercase_first_letter(diff_type)}":
+            if is_constraint_field(key_diff, diff_element):
                 base_element[key_diff] = val_diff
             else:
                 raise GenerationError(e)
+
+
+def is_constraint_field(key, element):
+    """ Check if a field is a constraint for an Elementdefinition.
+    What we call constraint fields here are fields of the type
+    "fixedTypeForElement" or "patternTypeForElement".
+    For instance, for an element of type CodeableConcept,
+    is_constraint_field("patternCodeableConcept") returns True.
+    """
+    # Sanity check, mainly here to catch a case we didn't think about when implement this
+    assert len(element["type"]) == 1, f"Cannot guess type of element {element}"
+    element_type = element["type"][0]["code"]
+    return key in [
+        f"fixed{uppercase_first_letter(element_type)}",
+        f"pattern{uppercase_first_letter(element_type)}",
+    ]

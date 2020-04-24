@@ -10,7 +10,7 @@ from .errors import *
 from .slice import Slice
 
 
-with open("/Users/jason/Desktop/choice-elements.json", "r") as fp:
+with open("fhir_bundles/choice-elements.json", "r") as fp:
     all_choice_elements = json.load(fp)
 
 
