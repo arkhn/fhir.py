@@ -15,7 +15,7 @@ profiles_to_skip = [
     "catalog",  # One element is missing in snapshot...
     "clinicaldocument",
     "diagnosticreport-genetics",
-    "elementdefinition-de",  # Extensions are extanded in snap but not in diff
+    "elementdefinition-de",  # Extensions are expanded in snap but not in diff
     "familymemberhistory-genetic",
     "hlaresult",  # Default slicing absent from some extensions in snap
     "observation-genetics",  # Default slicing absent from some extensions in snap
