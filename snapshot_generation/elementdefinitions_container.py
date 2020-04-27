@@ -24,6 +24,7 @@ class ElementDefinitionsContainer(ABC):
         sliceName=None,
         new_type=None,
     ):
+        # TODO check in place uses
         for k, v in new_element.items():
             if k in keys_to_skip:
                 continue

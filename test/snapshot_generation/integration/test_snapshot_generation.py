@@ -15,10 +15,9 @@ profiles_to_skip = [
     "catalog",  # One element is missing in snapshot...
     "clinicaldocument",
     "diagnosticreport-genetics",
-    "elementdefinition-de",  # FIXME List of extensions are put in reverse order
+    "elementdefinition-de",  # Extensions are extanded in snap but not in diff
     "familymemberhistory-genetic",
-    "hlaresult",  # FIXME List of extensions are put in reverse order
-    "lipidprofile",  # FIXME List of extensions are put in reverse order
+    "hlaresult",  # Default slicing absent from some extensions in snap
     "observation-genetics",  # FIXME List of extensions are put in reverse order
     "provenance-relevant-history",
     "servicerequest-genetics",

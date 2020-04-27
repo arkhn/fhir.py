@@ -1,7 +1,8 @@
+from collections import defaultdict, OrderedDict
 import copy
 import json
 
-from .apply_element import apply_diff_element_on_list
+from .apply_element import apply_diff_element, apply_diff_element_on_list
 from .elementdefinitions_container import ElementDefinitionsContainer
 from .helper import (
     fetch_structure_definition,
@@ -23,9 +24,12 @@ class SnapshotGenerator(ElementDefinitionsContainer):
     def __init__(self, api_url):
         self.api_url = api_url
 
-        self.slices = {}
-        self.choice_type_elements = {}
+        self.slices = OrderedDict()
+        self.choice_type_elements = OrderedDict()
         self._snapshot_elements = None
+
+        # Dict used to know where to insert extensions
+        self.extension_lengths = defaultdict(lambda: 0)
 
     @property
     def snapshot_elements(self):
@@ -36,8 +40,8 @@ class SnapshotGenerator(ElementDefinitionsContainer):
         self._snapshot_elements = value
 
     def reset(self):
-        self.slices = {}
-        self.choice_type_elements = {}
+        self.slices = OrderedDict()
+        self.choice_type_elements = OrderedDict()
         self.snapshot_elements = None
 
     def augment_with_snapshot(self, profile):
@@ -75,7 +79,7 @@ class SnapshotGenerator(ElementDefinitionsContainer):
             elif self.is_renamed_choice_element(
                 diff_element["id"]
             ):  # TODO can we have a non renamed element which is choice element?
-                # TODO can I use the evaluation in the if?
+                # NOTE in python3.8 we could have used a named expression
                 choice_root, choice_type = self.is_renamed_choice_element(diff_element["id"])
                 self.create_new_choice_element(diff_element, choice_root, choice_type)
 
@@ -133,7 +137,7 @@ class SnapshotGenerator(ElementDefinitionsContainer):
         )
 
     def add_to_existing_choice_element(self, diff_element):
-        # TODO this was already done in the if
+        # NOTE this was already done in the if
         root_id = next(
             choice_elem_root
             for choice_elem_root in self.choice_type_elements
@@ -142,21 +146,23 @@ class SnapshotGenerator(ElementDefinitionsContainer):
         self.choice_type_elements[root_id].add_diff_element(diff_element)
 
     def handle_extension_slice(self, diff_element):
-        # TODO extensions are in reverse order
-        # TODO can be quite slow, because of the api call?
         try:
             profile_url = diff_element["type"][0]["profile"]
         except KeyError:
             raise GenerationError("Couldn't find profile url in diff element.")
         extension_definition = fetch_structure_definition(api_url=self.api_url, url=profile_url)
         extension_root = get_root_element(extension_definition)
-        for key_diff, val_diff in diff_element.items():
-            # Replace keys in diff element
-            # NOTE no need for checks, override everything
-            extension_root[key_diff] = val_diff
         extension_element, insert_ind = self.find_element_by_id(
-            self.snapshot_elements, extension_root["path"]
+            self.snapshot_elements, diff_element["path"]
         )
+        extension_root = self.replace_element(
+            extension_root,
+            extension_element,
+            keys_to_remove=["comment", "mapping", "isSummary"],
+        )
+        extension_root["id"] = diff_element["id"]
+        extension_root["path"] = diff_element["path"]
+        apply_diff_element(extension_root, diff_element)
         if "slicing" not in extension_element:
             # Add default slicing
             extension_element["slicing"] = {
@@ -164,11 +170,13 @@ class SnapshotGenerator(ElementDefinitionsContainer):
                 "ordered": False,
                 "rules": "open",
             }
-        # TODO function for that?
-        self.snapshot_elements.insert(insert_ind + 1, extension_root)
+        self.extension_lengths[extension_root["path"]] += 1
+        offset = self.extension_lengths[extension_root["path"]]
+        self.snapshot_elements.insert(insert_ind + offset, extension_root)
 
     def augment_with_slices(self):
-        for id_, slice_ in self.slices.items():
+        # We iterate on the reversed dict to have slices of the same element in the right order
+        for id_, slice_ in reversed(self.slices.items()):
             # Find where to add
             _, insert_ind = self.find_element_by_id(
                 self.snapshot_elements, slice_.root_id.split(":")[0]
@@ -178,7 +186,8 @@ class SnapshotGenerator(ElementDefinitionsContainer):
                 self.snapshot_elements.insert(insert_ind, slice_element)
 
     def augment_with_choice_elements(self):
-        for id_, element in self.choice_type_elements.items():
+        # We iterate on the reversed dict to have choices of the same element in the right order
+        for id_, element in reversed(self.choice_type_elements.items()):
             element.normalize_ids_and_paths()
             # Find where to add
             _, insert_ind = self.find_element_by_id(self.snapshot_elements, element.choice_root)
