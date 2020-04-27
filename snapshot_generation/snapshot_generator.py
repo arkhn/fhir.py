@@ -7,7 +7,6 @@ from .elementdefinitions_container import ElementDefinitionsContainer
 from .helper import (
     fetch_structure_definition,
     get_root_element,
-    prepend_root,
     uppercase_first_letter,
 )
 from .choice_type_element import ChoiceTypeElement

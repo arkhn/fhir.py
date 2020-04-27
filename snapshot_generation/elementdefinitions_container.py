@@ -8,7 +8,7 @@ from .helper import fetch_structure_definition, prepend_root
 class ElementDefinitionsContainer(ABC):
     """
     This abstract class provides useful functions to process attributes being
-    a list 
+    a list
     """
 
     @abstractproperty
