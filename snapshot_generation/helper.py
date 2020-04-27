@@ -2,19 +2,16 @@ import requests
 
 from .errors import GenerationError
 
-# TODO put that in an env variable or something like that
-API_URL = "https://pyrog.staging.arkhn.com/api"
 
-
-def fetch_structure_definition(id_=None, url=None):
+def fetch_structure_definition(api_url, id_=None, url=None):
     if not (id_ is None) ^ (url is None):
         raise ValueError("should provide id or url")
 
     try:
         if id_ is not None:
-            response = requests.get(f"{API_URL}/StructureDefinition/{id_}")
+            response = requests.get(f"{api_url}/StructureDefinition/{id_}")
         else:
-            response = requests.get(f"{API_URL}/StructureDefinition?url={url}")
+            response = requests.get(f"{api_url}/StructureDefinition?url={url}")
     except requests.exceptions.ConnectionError as e:
         raise ConnectionError(f"Could not connect to the fhir-api service: {e}")
     if response.status_code != 200:

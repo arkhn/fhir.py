@@ -1,8 +1,9 @@
 import json
-import random
 
 from snapshot_generation.snapshot_generator import SnapshotGenerator
 from snapshot_generation.helper import *
+
+API_URL = "https://pyrog.staging.arkhn.com/api"
 
 with open("fhir_bundles/profiles.json", "r") as profile_file:
     profiles = json.load(profile_file)
@@ -51,7 +52,7 @@ can_be_absent_in_ref = ["alias", "comment", "mapping", "isSummary"]
 
 
 def test_snapshot_generation():
-    generator = SnapshotGenerator()
+    generator = SnapshotGenerator(api_url=API_URL)
 
     for profile_definition in profiles["entry"]:
         profile = profile_definition["resource"]

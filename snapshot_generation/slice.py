@@ -1,11 +1,11 @@
 import copy
 
 from .apply_element import apply_diff_element_on_list
-from .composite_attribute import CompositeAttribute
+from .elementdefinitions_container import ElementDefinitionsContainer
 from .helper import fetch_structure_definition, prepend_root
 
 
-class Slice(CompositeAttribute):
+class Slice(ElementDefinitionsContainer):
     """
     Abstraction to represent a group of fhir Elementdefinitions that are
     part of a slice.
@@ -20,13 +20,17 @@ class Slice(CompositeAttribute):
     Observation.code.coding:BodyWeightCode.
     """
 
-    def __init__(self, snapshot_root, diff_el, slice_type, base_id):
-        diff_el = copy.deepcopy(diff_el)
-        self.root_path = diff_el["path"]
-        self.root_id = diff_el["id"]
+    def __init__(self, snapshot_root, diff_element, slice_type, base_id, api_url):
+        diff_element = copy.deepcopy(diff_element)
+        self.root_path = diff_element["path"]
+        self.root_id = diff_element["id"]
         self.base_id = base_id
 
-        self.root_base_elements = fetch_structure_definition(id_=slice_type)["snapshot"]["element"]
+        self.api_url = api_url
+
+        self.root_base_elements = fetch_structure_definition(api_url=self.api_url, id_=slice_type)[
+            "snapshot"
+        ]["element"]
         self.root_base_elements[0] = self.replace_element(
             self.root_base_elements[0],
             snapshot_root,
@@ -36,8 +40,16 @@ class Slice(CompositeAttribute):
         self.replace_element_ids_and_paths(self.root_base_elements)
 
         # Apply the diff element
-        apply_diff_element_on_list(self.root_base_elements, diff_el)
-        self.definition_elements = [self.root_base_elements[0]]
+        apply_diff_element_on_list(self.root_base_elements, diff_element)
+        self._snapshot_elements = [self.root_base_elements[0]]
+
+    @property
+    def snapshot_elements(self):
+        return self._snapshot_elements
+
+    @snapshot_elements.setter
+    def snapshot_elements(self, value):
+        self._snapshot_elements = value
 
     def replace_element_ids_and_paths(self, elements):
         # We change ids and paths so that they are coherent with the ones from

@@ -1,11 +1,20 @@
-from abc import ABC
+from abc import ABC, abstractproperty
 
 from .apply_element import apply_diff_element_on_list
 from .errors import GenerationError
 from .helper import fetch_structure_definition, prepend_root
 
 
-class CompositeAttribute(ABC):
+class ElementDefinitionsContainer(ABC):
+    """
+    This abstract class provides useful functions to process attributes being
+    a list 
+    """
+
+    @abstractproperty
+    def snapshot_elements(self):
+        raise NotImplementedError
+
     @staticmethod
     def replace_element(
         element,
@@ -30,13 +39,13 @@ class CompositeAttribute(ABC):
         return element
 
     def expand_element(self, element_id):
-        for ind, element in enumerate(self.definition_elements):
+        for ind, element in enumerate(self.snapshot_elements):
             if element["id"] == element_id:
                 assert (
                     len(element["type"]) == 1
                 ), "Oops, several types found when trying to expand slice element"
                 type_to_fetch = element["type"][0]["code"]
-                fetch_def = fetch_structure_definition(id_=type_to_fetch)
+                fetch_def = fetch_structure_definition(api_url=self.api_url, id_=type_to_fetch)
                 for new_el in fetch_def["snapshot"]["element"]:
                     if len(new_el["id"].split(".")) == 1:
                         # skip root
@@ -44,19 +53,20 @@ class CompositeAttribute(ABC):
                     ind += 1
                     new_el["id"] = prepend_root(element["id"], new_el["id"])
                     new_el["path"] = prepend_root(element["path"], new_el["path"])
-                    self.definition_elements.insert(ind, new_el)
-                break
+                    self.snapshot_elements.insert(ind, new_el)
+                return True
+        return False
 
     def add_diff_element(self, diff_element):
-        ok = apply_diff_element_on_list(self.definition_elements, diff_element)
+        ok = apply_diff_element_on_list(self.snapshot_elements, diff_element)
         if not ok:
-            if len(self.definition_elements) == 1:
-                # If we only have the root in self.definition_elements
+            if len(self.snapshot_elements) == 1:
+                # If we only have the root in self.snapshot_elements
                 # we get the other element that were cached
-                self.definition_elements = self.root_base_elements
+                self.snapshot_elements = self.root_base_elements
             else:
                 # Else, we need to expand another element
                 self.expand_element(diff_element["id"].rsplit(".", 1)[0])
-            ok = apply_diff_element_on_list(self.definition_elements, diff_element)
+            ok = apply_diff_element_on_list(self.snapshot_elements, diff_element)
             if not ok:
                 raise GenerationError(f"Could not apply differential element: {diff_element}")
