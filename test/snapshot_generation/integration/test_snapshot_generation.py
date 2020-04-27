@@ -11,14 +11,14 @@ with open("fhir_bundles/profiles.json", "r") as profile_file:
 
 # Known to have weird snapshot/differential pairs I don't agree with
 profiles_to_skip = [
-    "bp",  # FIXME Add .code on a BackboneElement?
+    "bp",  # Add .code on a BackboneElement?
     "catalog",  # One element is missing in snapshot...
     "clinicaldocument",
     "diagnosticreport-genetics",
     "elementdefinition-de",  # Extensions are extanded in snap but not in diff
     "familymemberhistory-genetic",
     "hlaresult",  # Default slicing absent from some extensions in snap
-    "observation-genetics",  # FIXME List of extensions are put in reverse order
+    "observation-genetics",  # Default slicing absent from some extensions in snap
     "provenance-relevant-history",
     "servicerequest-genetics",
 ]
@@ -46,7 +46,7 @@ fields_to_skip = [
 
 # TODO investigate on these. Maybe some of them can be added/removed easily in
 # generated snapshot
-can_be_absent_in_result = ["alias", "comment", "slicing"]
+can_be_absent_in_result = ["alias", "comment", "mapping", "slicing"]
 can_be_absent_in_ref = ["alias", "comment", "mapping", "isSummary"]
 
 
