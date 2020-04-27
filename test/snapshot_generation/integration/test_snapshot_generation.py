@@ -61,12 +61,7 @@ def test_snapshot_generation():
         if profile["id"] in profiles_to_skip:
             continue
 
-        try:
-            augmented_profile = generator.augment_with_snapshot(profile)
-        except Exception as e:
-            print(profile["id"])
-            print(e)
-            assert False
+        augmented_profile = generator.augment_with_snapshot(profile)
 
         for el_result, el_ref in zip(
             augmented_profile["snapshot"]["element"], profile_snapshot["element"]
