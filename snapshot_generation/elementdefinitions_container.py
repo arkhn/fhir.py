@@ -8,11 +8,15 @@ from .helper import fetch_structure_definition, prepend_root
 class ElementDefinitionsContainer(ABC):
     """
     This abstract class provides useful functions to process attributes being
-    a list
+    a list of fhir Elementdefinitions.
     """
 
     @abstractproperty
     def snapshot_elements(self):
+        """
+        We want to make sure that all the classes inheriting from ElementDefinitionsContainer
+        have a snapshot_elements attribute.
+        """
         raise NotImplementedError
 
     @staticmethod
